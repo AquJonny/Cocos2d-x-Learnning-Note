@@ -1,0 +1,82 @@
+1.CC_SYNTHESIZE_RETAIN与CC_SYNTHESIZE
+  相同点：
+        A.声明对象的set()和get()方法
+        B.得到的是一个autorelease的对象
+        C.这个对象的生命周期为全局，可以调用的范围看声明的区域
+  
+  不同点：
+        A.CC_SYNTHESIZE_RETAIN方法在创建对象之后会调用retain为其的引用计数＋1
+          ＝>处理完成之后不会因为引用计数－！而等于0，被自动释放
+            ＝>也因此需要在不再使用的时候使用CC_SAFE_RELEASE_NULL方法去释放掉
+        B.cocos2d::Vector<T> 并不是 cocos2d::Object 的子类，
+          所以不要像使用其他cocos2d类一样来用retain/release和引用计数内存管理。
+          
+2.关于update方法
+  每个节点(Layer，Sprite)都有各自的update方法，编程时需要重写原本父类的函数。
+  通过this->scheduleUpdate()方法登录，让每一帧都调用该节点的update方法。
+  
+3.关于虚函数(virtual)
+  虽然类中可以定义虚函数（并没有实际去实现这个函数而只是单纯的进行了声明）
+  但是子类无法直接去调用父类的虚函数，必须在当前类中去对父类声明的虚函数进行具体的实现。
+  但是A类声明了虚函数，B类继承了A类并完善了虚函数的实现方法，此时C类继承B类的话，就可以调用
+  A类声明的虚函数了，但是，实际调用的是在B类中已经完善了的虚函数。
+  
+4.关于精灵的动作
+  A.循环方法(RepeatForever／Repeat)的参数必须是Action类型，然而Rotate的create方法创建的对象是
+    是Rotate＊的(CaleTo，MoveTo等类的create方法创建的对象并不是action）
+  B.并行方法(Spawn)的参数除了与上一条一样必须是Action类型之外。
+    同为描绘的两个动作是无法同时进行的
+    ＝>提问：何为描绘的动作
+            为何下落和旋转无法同时进行(实际代码效果为只能下落)
+            
+5.关于创建对象
+  使用NEW活着CREATE创建的对象，由于是autorelease的对象的缘故。在主处理完成时会被自动释放。
+  因此，在别的方法中想再次使用这个对象的话，有两种方法：
+  A.在创建完成之后需要调用Retain()方法为其引用计数＋1
+  B.利用CC_SYNTHESIZE_RETAIN方法创建全局性质的变量，NEW/CREATE之后获得的新对象，set到全局变量中
+    这样在其他的方法中就可以通过访问全局变量，来利用创建的对象了
+  以上两种方法创建的对象都需要在不再使用的时候使用CC_SAFE_RELEASE_NULL方法去释放掉
+
+6.创建事件监听Callback
+  事件监听一共分四类
+  A.鼠标事件
+  
+  B.按键事件
+  
+  C.触屏事件(单点触控和多点触控)
+    单点：
+       EventListenerTouchOneByOne::create()
+    多点：
+  
+  D.加速度传感器事件(陀螺仪)
+  
+  一般步骤：
+    1.创建事件监听器
+    2.定义事件响应方法（callback函数）
+    3.将事件监听器加入Director监听队列
+    
+7.常用的获取精灵信息的一些方法
+  A.获取／设定坐标点（X，Y）
+    getPosition／setPosition
+    
+  B.获取／设定X轴坐标点（Y轴同理）
+    getPositionX／setPositionX
+  
+  C.获取／设定精灵的锚点
+    getAnchorPoint／setAnchorPoint
+  
+  D.获取精灵所在的矩形区域（X，Y，长，宽）＊X，Y是精灵左下角的位置
+    getBoundingBox
+    ＊判断一个点是否在精灵所在区域内
+      BoundingBox.containsPoint(Point)
+  
+8.场景切换方式
+  分为三种方式：
+  A.repleceScene
+  B.pushScene
+  C.popScene
+  
+  
+  
+  
+onEnterTransitionDidFinish
