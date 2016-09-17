@@ -76,7 +76,52 @@
   B.pushScene
   C.popScene
   
+  相同点：
+    显示目标场景
+    
+  不同点：
+    repleceScene 
+      使用目标场景替换当前场景，当前场景会被完全释放（运行析构）函数
+    pushScene和popScene
+      都是对场景堆栈进行操作，
+      pushScene是将当前场景压入堆栈中暂存，不会运行析构函数，也不会释放资源
+      popScene是将目标场景丛堆栈中取出，同时，当前场景会被释放 *如果堆栈中没有Scene则无法使用
+      (需要实际运用去验证)
+    
+    补充：  
+      切换场景时，调用的一些方法的顺序
+      
+  
+9.背景音乐和效果音
+  使用CocosDenshion::SimpleAudioEngine类去实现，因为不属于Cocos2d的子类，需要添加头文件
+  playBackgroundMusic播放背景音乐；playEffect播放音效
+  注意：A.播放背景音乐之后，需要在场景结束时刻调用CocosDenshion::SimpleAudioEngine::end()方法进行结束处理
+         ＊不调用貌似也没问题？？？
+       B.设置背景音乐之后，需要注意在游戏被最小化以及被恢复时候的背景音乐控制（一般为暂停&恢复）
+         在AppDelegate.cpp的
+           applicationDidEnterBackground  被最小化
+           applicationWillEnterForeground 丛最小化被恢复
+         中追加pauseBackgroundMusic()暂停，resumeBackgroundMusic()恢复的处理
+         
+10.关于onEnterTransitionDidFinish方法
+  该方法为场景加载完毕后只运行一次的预处理方法，为Layer类既存处理
+  可以通过重载的方式，
+  保留原本处理内容（添加Layer::onEnterTransitionDidFinish()调用父类原本的处理）
+  并追加自己需要的预处理内容：
+    背景音乐的播放开关
+    场景内容的设定
+    etc...
+  ＊该处理会在 构造，create，init等方法之后，被director调用
+
+11.CC_CALLBACK_0系列宏
+
+
+12.随机数系统
+
+
+13.添加精灵动画的方法＊和14一起单独写一篇比较好
+
+
+14.几种高效进行精灵描画的方法
   
   
-  
-onEnterTransitionDidFinish
