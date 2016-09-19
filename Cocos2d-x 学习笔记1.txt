@@ -53,7 +53,10 @@
   一般步骤：
     1.创建事件监听器
     2.定义事件响应方法（callback函数）
-    3.将事件监听器加入Director监听队列
+    TouchEvent->onTouchBegan = callback函数内容
+    
+    3.将事件监听器加入EventDirector监听队列
+      this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(监听器，节点对象)
     
 7.常用的获取精灵信息的一些方法
   A.获取／设定坐标点（X，Y）
