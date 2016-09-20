@@ -117,9 +117,97 @@
   ＊该处理会在 构造，create，init等方法之后，被director调用
 
 11.CC_CALLBACK_0系列宏
+   首先,CC_CALLBACK_0系列有以下4个成员
+     CC_CALLBACK_0
+     CC_CALLBACK_1
+     CC_CALLBACK_2
+     CC_CALLBACK_3
 
+   这系列的宏是对std::bind的一种封装,关于bind:
+   bind是一组用于函数绑定的模板。在对某个函数进行绑定时，可以指定部分参数或全部参数，也可以不指定任何参数，还可以调整各个参数间的顺序。对于未指定的参数，可以使用占位符_1、_2、_3来表示。_1表示绑定后的函数的第1个参数，_2表示绑定后的函数的第2个参数，其他依次类推。(_1的完整写法std::placeholders::_1)
+
+   而其末尾的数字0~3的含义，则是在调用该函数时候需要传入的参数数量.
+
+   举例而言:
+
+   void callback(int a, int b, int c)
+   ↓
+   CC_CALLBACK_0(callback, this, 10, 20, 30);
+   *调用时候不需要再额外传递参数
+   ↓
+   CC_CALLBACK_1(callback, this, _1, 20, 30);
+   *调用时候需要将_1占位符代表的参数传递给函数
+   *_1在写代码时候可以被省略
 
 12.随机数系统
+   C++(Ver.11)中,取随机数的方法:
+   1.传统的rand()方法.
+     只要调用这个方法就可以取得0~2147483647范围内的一个随机数.
+     而使用rand()%X方法的话,就可以取得0~X范围内的一个随机数(X为整数)
+     然而这个方法存在一个弊端.
+     那就是,通过这个方法获得的随机数的随机性很差,具体点说的话.每次执行，在第n次获得的随机数必然相同.
+     另说还有一个弊端是取得随机数的速度很慢...然而目前没有太大体会
+
+   2.C++11带来的新的非确定性随机数生成设备 std::random_devicestd::random_device
+     >std::random_device rd;
+     >rd();
+     通过这个方法就可以获得质量很好的随机数了
+
+   3.从2出发的更进一步的随机数,称为random number engine
+     标准把随机数抽象成随机数引擎和分布两部分.引擎用来产生随机数,分布产生特定分布的随机数(比如平均分布,正太分布等).
+　　 随机数引擎接受一个整形参数当作种子,不提供的话,会使用默认值. 推荐使用random_device来产生一个随机数当作种子
+
+     种子:
+       *如果不设定种子，那么产生的随机数序列每次都一样
+       常见种子:
+         std::random_device          标准库自带             可以生成质量很好的随机数
+         其他自定义的种子,例如Time等整形参数
+
+　　 标准提供三种常用的引擎(生成器):
+       linear_congruential_engine  线性同余算法           最常用的,而且速度也是非常快的
+       mersenne_twister_engine     梅森旋转算法           号称是最好的伪随机数生成器
+       subtract_with_carry_engine  带进位的线性同余算法   不明
+
+     分布器:
+       *如果只用generator配上seed只能产生离散的等可能分布，产生的数值在generator的min和max之间，
+        并且结果都是UIntType的值。无法很好的控制产生数值的分布区间和分布概率。如果要实现这种功能就要用到分布器。
+       常见分布器:
+         1.均匀分布：
+           uniform_int_distribution		整数均匀分布
+           uniform_real_distribution		浮点数均匀分布
+
+         2.伯努利类型分布：（仅有yes/no两种结果，概率一个p，一个1-p）
+           bernoulli_distribution		伯努利分布
+           binomial_distribution		二项分布
+           geometry_distribution		几何分布
+           negative_biomial_distribution	负二项分布
+
+         3.Rate-based distributions: 
+           poisson_distribution			泊松分布
+           exponential_distribution		指数分布
+           gamma_distribution			伽马分布
+           weibull_distribution			威布尔分布
+           extreme_value_distribution		极值分布
+
+         4.正态分布相关：
+           normal_distribution			正态分布
+           chi_squared_distribution		卡方分布
+           cauchy_distribution			柯西分布
+           fisher_f_distribution		费歇尔F分布
+           student_t_distribution		t分布
+
+         5.分段分布相关：
+           discrete_distribution		离散分布
+           piecewise_constant_distribution	分段常数分布
+           piecewise_linear_distribution	分段线性分布
+
+     >std::random_device rd;                                    //生成种子
+     >std::mt19937 mt.seed(rd());                               //使用梅森旋转算法的生成器
+     >std::uniform_real_distribution<float> dest(_min, _max);   //使用浮点数平均分布
+     >dest(mt);                                                 //获得_min到_max范围之间的浮点随机数
+
+参考:http://blog.csdn.net/akonlookie/article/details/8223525
+
 
 
 13.添加精灵动画的方法＊和14一起单独写一篇比较好
