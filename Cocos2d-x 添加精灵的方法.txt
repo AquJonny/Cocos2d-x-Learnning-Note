@@ -1,0 +1,133 @@
+
+  Sprite 是一个2D图像节点
+  可以使用一个图片或者图片的一个矩形区域来创建 Sprite对象。
+
+  添加精灵的方法:
+    从最根本说起的话,Sprite::create()可谓是一切的一切的源头.
+    从这个方法基础上衍生出来的各种创建方法,再扩展,就形成了现在这么多种类的创建方法.
+    
+    虽说"这么多种类",不过,用到的方法,最多也就那么几种.
+    1. Sprite::create()
+    ->创建一个空的精灵对象,内容属性都需要之后添加
+
+    2. Sprite::create(const std::string& filename)
+    ->创建一个精灵对象,使用的是指定文件的图片
+
+    3. Sprite::create(const std::string& filename, const Rect& rect)
+    ->创建一个精灵对象,使用的是指定文件的特定区域的图片
+
+    4. Sprite::createWithtexture(tecture2D* texture)
+    ->创建一个精灵对象,使用的是指定的纹理(通常配合SpriteBatchNode使用)
+
+    5. Sprite::createWithSpriteFrame(SpriteFrame* spriteframe)
+    ->创建一个精灵对象,使用的是指定的精灵帧(通常配合SpriteFrame使用)
+
+    6. Sprite::createWithSpriteFrameName(const std::string& spriteframename)
+    ->创建一个精灵对象,通过SpriteFrame名,应用指定的精灵帧(通常配合SpriteFrameCache使用)
+    
+    以上都是很常用的精灵创建方法.
+
+    基于MVC(或者类MVC)结构的思想,精灵常常会被单独作为一个类来定义.
+    此时精灵类的init方法中会使用到Sprite::initXXXX()相关的方法,所以作为变相的create,也简单的提一下.
+    *需要注意的是,并没有一个叫做Sprite::init()的方法,这与create不太一样
+    
+    1. Sprite::initWithFile(const std::string& filename)
+
+    2. Sprite::initWithFile(const std::string& filename, const Rect& rect)
+
+    3. Sprite::initWithTexture(tecture2D* texture)
+
+    4. Sprite::initWithSpriteFrame(priteFrame* spriteframe)
+
+    6. Sprite::initWithSpriteFrameName(const std::string& spriteframename)
+
+    可以看出,除了创建一个空对象之外,所有create方法都有其对应的init方法.
+
+  在创建方法中提到了几个关键字SpriteFrame,SpriteBatchNode,SpriteFrameCache.
+  基于个人理解来说的话:
+    1. SpriteFrame是单纯将精灵帧保存起来的一个容器(栈),通过pushback，将一个个精灵帧放入容器内.
+    
+    2. SpriteFrameCache是SpriteFrame的进化型,通过(n.plist, n.png)的方式载入一个SpriteSheet文件
+       而,其中每个SpriteFrame的信息都在n.plist中保存着.可以通过Name这样的关键字找到特定精灵帧.
+    
+    3. SpriteBatchNode更像是SpriteFrameCache和Sprite的结合体.它可以和SpriteFrameCache一样方式的
+       添加纹理集信息,也可以像Sprite一样设置坐标,设置各种属性,在画面上显示.而利用它提供的纹理创建的
+       精灵,作为SpriteBatchNode中的一个子节点(addChild).
+       *SpriteBatchNode更像是一个layer,承载着诸多Sprite,每一个Node只会使用一次OpenGl进行绘制.
+       (这就是为何说使用Node会高效和节约资源的原因)
+       *SpriteBatchNode的一些限制条件
+         A.Sprite 对象的孩子只能是 Sprite （否则，Cocos2d-x 会触发断言）
+         B.当 Sprite 的父节点是 SpriteBactchNode 时，不能添加 ParticleSystem 作为 Sprite的子节点。
+           这将导致当 Sprite 的父节点是 SpriteBatchNode 时，不能使用 ParallaxNode
+         C.所有的 Sprite 对象必须共享相同的纹理ID (否则，Cocos2d-x 会触发断言)
+         D.Sprite 对象使用 SpriteBatchNode 的混合函数和着色器。
+       
+    所以高效地绘制精灵的方法是：
+      使用SpriteFrame／SpriteFrameCache去缓存纹理数据，使用SpriteBatchNode来优化绘制同纹理的精灵
+      *虽然 v3.0 仍然支持 SpriteBatchNode （与之前的版本拥有相同的特效和限制），
+       但是我们不鼓励使用它。相反，我们推荐直接使用 Sprite，不需要再它作为子节点添加到 SpriteBatchNode 中。
+
+    关于上面提到了*.plist：
+      在cocos2d-x中可以用.plist格式的文件来保存数据，它是XML文件格式的一种.
+      在cocos2d-x解析.plist方面相关的资料比较少，但本身也很简单，
+      要解析.plist文件可以参考cocos2d-x类库中的CCSpriteFrameCache类和CCParticleSystem类，
+      它主要是使用CCDictionary类来对.plist文件进行操作。
+      
+      参考：http://blog.csdn.net/kenkao/article/details/10170549
+      
+      简单来说，.plist是XML文件一样的一种作为配置文件存在的数据文件。
+      而在这里提到的.plist是通过TexturePakcer工具(一种图片处理工具，
+      这里是用来把大量纹理图片组合成一张png的工具)生成的，与png文件相对应的配置文件。
+      
+  下面是关于添加精灵，特别是多组精灵的实际代码：
+   
+    方法一:直接创建精灵  
+          适合于要显示的是这张图片的全部区域，  
+      >auto sprite = Sprite::create("Icon.png");  
+      >sprite->setPosition(ccp(100, 100));  
+      >this->addChild(sprite);
+      
+    方法二:参数 图片名称 矩形区域  
+          适合于需要显示此图片的部分区域  
+      >auto sprite = Sprite::create("Icon.png",Rect(0, 0, 30, 30));  
+      >sprite->setPosition(Point(100, 100));  
+      >this->addChild(sprite);
+      
+    方法三:利用帧缓存中的一帧的名称声称一个对象  
+          适合于plist打包好的文件  
+      >SpriteFrameCache *frameCache = SpriteFrameCache::getInstance();
+      >frameCache->addSpriteFramesWithFile("Icon.plist","Icon.png");
+      >auto sprite = Sprite::createWithSpriteFrameName("Icon1.png");
+      >sprite->setPosition(Point(100, 100)); 
+      >this->addChild(sprite);
+      
+    方法四:利用另外一帧生成一个精灵对象    
+          适合于做帧动画使用  
+      >auto frame = SpriteFrame::create("Icon.png", Rect(0, 0, 40, 30));  
+      >auto sprite = Sprite::createWithSpriteFrame(frame);  
+      >sprite->setPosition(Point(310, 150));  
+      >this->addChild(sprite)
+
+    方法五:利用纹理，  
+          适合于需要频繁使用的图片  
+      >auto spriteTexture = SpriteBatchNode::create("iocn.png");  
+      >spriteTexture->setPosition(Point::ZERO);    
+      >由于Sprite是存在于SpriteBatchNode这个Layer上的，所以参照的是本地坐标，而坐标原点就是Node的位置。
+      >这里设置Node的坐标点为Zero，这样Node的坐标系就可以和既存的本地坐标重合。
+      >this->addChild(spriteTexture);  
+      >auto sprite = Sprite::createWithTexture(spriteTexture->getTexture());  
+      >sprite->setPosition(Point(100, 100));  
+      >spriteTexture->addChild(sprite);
+
+
+
+
+
+
+
+
+
+
+
+
+
