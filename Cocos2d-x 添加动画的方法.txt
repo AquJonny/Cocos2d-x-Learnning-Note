@@ -1,0 +1,93 @@
+  说起精灵的动画,需要先看一下下面着张图.
+  http://www.cocos.com/doc/doc/cocos-docs-master/manual/framework/native/v3/action/res/inherent.png
+
+  一切动作都是基于Action类的,
+  Action类拥有三个子类,
+    FiniteTimeAction :所有有限时间动作的基类。 可能的动作
+
+    Follow           :一个追踪某个节点的动作。 与其使用相机去追踪一个动作，你可以使用这个动作达到同样的效果。 
+
+    Speed            :改变一个动作的速度，使它的执行使用更长的时间（speed>1）或更少（speed<1） 
+                      可以有效得模拟“慢动作”或“快进”的效果。
+
+  而从FiniteTimeAction中又分出了两大分支
+    ActionInstant :即时动作是会立即被执行的动作。
+                   他们没有持续时间动作（ActionInterval）的持续时间属性。
+
+    ActionInterval:时间间隔动作（ActionInterval）是一个在一段时间内执行的动作。 
+                   它有一个开始时间和完成时间。完成时间等于起始时间加上持续时间
+
+  动作玩的溜,就全靠对这些Action类的运用了.
+
+  如果仔细看的话,Animate也继承自Action类.
+  因此,不论"动作"或是"动画"归根结底都是Action.
+  先编辑好想要实现的动作/动画,在调用runAction(),执行动作.
+  这是他们的相同点.
+  
+  说到不同点的话,就是这"编辑"的过程了.
+
+  动作(FiniteTimeAction视角)
+    1.单个动作
+      MoveTo,ScaleTo,RotateTo,JumpTo...
+      MoveBy,ScaleBy,RotateBy,JumpBy...
+      这些都是一个完整的有方向性的动作,需要注意的是xxxxTo和xxxxBy的差别.
+      xxxxTo:指定的坐标(运动量)是绝对值.
+      xxxxBy:指定的坐标(运动量)是相对值.
+
+      除了有方向性的动作之外,还有一些非方向性的.
+      Blink,FadeIn,FadeOut...
+
+    2.组合动作
+      把复数单个动作组合起来的一些方法
+      DelayTime     :延时动作其实什么都不做，提供一段空白期
+      Repeat        :反复执行某个动作
+      RepeatForever :反复执行某个动作,直至永远(被删除为止)
+      Spawn         :使一批动作同时执行
+      Sequence      :让各种动作有序执行
+
+    *单个动作之间可以通过组合动作来连接
+    *DelayTime严格上来说也算是一个单个动作,只是这个动作是什么都不做
+    *组合动作之间可以相互组合,以达成更复杂的行为(例:Sequence(Repeate(),Spawn(),Sequence()...))
+    
+    3.一些特殊的动作
+      CallFunc       :调用函数
+      RemoveSelf     :删除本对象(执行动作的对象,而不是动作)
+      TargetedAction :可以让内部动作强制在目标节点上执行，而不是调用runAction函数时指定的节点
+      
+参考:https://my.oschina.net/ffs/blog/317118
+
+  动作也就这些玩意儿了,不过就像是魔方一样,不过是26个方块,但是变化却是千变万化.
+
+
+  动画
+    相比动作,它的"编辑"过程相对简单许多.
+    究其原因,因为"动作"都在一帧一帧的画面里表现出来了.
+
+    回想动画的最原始的型态,复数画面被连贯且快速的播放.
+    
+
+
+
+
+
+
+
+
+
+4.关于精灵的动作
+  A.循环方法(RepeatForever／Repeat)的参数必须是Action类型，然而Rotate的create方法创建的对象是
+    是Rotate＊的(CaleTo，MoveTo等类的create方法创建的对象并不是action）
+  B.并行方法(Spawn)的参数除了与上一条一样必须是Action类型之外。
+    同为描绘的两个动作是无法同时进行的
+    ＝>提问：何为描绘的动作
+            为何下落和旋转无法同时进行(实际代码效果为只能下落)
+
+
+
+
+
+
+
+
+
+
