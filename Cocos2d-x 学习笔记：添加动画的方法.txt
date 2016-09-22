@@ -14,10 +14,11 @@
     ActionInstant :即时动作是会立即被执行的动作。
                    他们没有持续时间动作（ActionInterval）的持续时间属性。
 
-    ActionInterval:时间间隔动作（ActionInterval）是一个在一段时间内执行的动作。 
+    ActionInterval:延时就是指动作的完成需要一定的时间。 
                    它有一个开始时间和完成时间。完成时间等于起始时间加上持续时间
+                   因此，actionWithDuration是延时动作执行时的第一个参数
 
-  动作玩的溜,就全靠对这些Action类的运用了.
+  动作要想玩的溜,就全靠对这些Action类的运用了.
 
   如果仔细看的话,Animate也继承自Action类.
   因此,不论"动作"或是"动画"归根结底都是Action.
@@ -31,8 +32,9 @@
       MoveTo,ScaleTo,RotateTo,JumpTo...
       MoveBy,ScaleBy,RotateBy,JumpBy...
       这些都是一个完整的有方向性的动作,需要注意的是xxxxTo和xxxxBy的差别.
-      xxxxTo:指定的坐标(运动量)是绝对值.
-      xxxxBy:指定的坐标(运动量)是相对值.
+      xxxxTo:意味着运动到指定的x,y的值的位置
+      xxxxBy:意味着运动到按照指定的x，y增量的位置
+             (这里x，y的值是值变化多少，而不指定运动到这个位置；x，y可以是负值)
 
       除了有方向性的动作之外,还有一些非方向性的.
       Blink,FadeIn,FadeOut...
@@ -53,8 +55,21 @@
       CallFunc       :调用函数
       RemoveSelf     :删除本对象(执行动作的对象,而不是动作)
       TargetedAction :可以让内部动作强制在目标节点上执行，而不是调用runAction函数时指定的节点
-      
-参考:https://my.oschina.net/ffs/blog/317118
+
+    4.动作的速度
+      基本动作和组合动作实现了针对精灵的各种运动、动画效果的改变，
+      但这样的改变的速度时不变的，通过（ActionEase）为基类的类系和Spped类我们可以很方便的修改精灵执行动作的速度：
+        EaseIn -由慢至快
+        EaseOut - 由快至慢
+        EaseInOut - 由慢至快再由快至慢
+        EaseSineIn - 由慢至快
+        EaseSineOut - 由快至慢
+        EaseSineInOut - 由慢至快再由快至慢
+        Speed - 人工设定速度，还可通过SetSpeed不断调整
+
+参考:
+https://my.oschina.net/ffs/blog/317118
+http://bingkuailong.blog.163.com/blog/static/128421908201241925348168/
 
   动作也就这些玩意儿了,不过就像是魔方一样,不过是26个方块,但是变化却是千变万化.
 
@@ -63,31 +78,23 @@
     相比动作,它的"编辑"过程相对简单许多.
     究其原因,因为"动作"都在一帧一帧的画面里表现出来了.
 
-    回想动画的最原始的型态,复数画面被连贯且快速的播放.
+    和动画相关的一些类:
+    AnimationCache  :用于存放多张动画帧的缓存
+    AnimationFrame  :动画帧
+    Animation       :将动画帧进行打包
+    Animate         :播放打包好的动画
+
+    根据这些类,大概就可以看出动画的编辑过程了
+    1.将需要的复数动画帧都缓存到AnimationCache中(可省略)
+      (也可以是AnimationFrame类型的容器里)
+      (使用SpriteFrame/SpriteFrameCache也可以)(用这个的人比较多)
     
+    2.使用Animation方法,将AnimationFrame/SpriteFrame(从Cache中取出)打包
 
+    3.使用Animate方法,把打包好的Animation进行播放,生成Action对象
+      (这样才能当作一个Action被使用和执行)
 
-
-
-
-
-
-
-
-4.关于精灵的动作
-  A.循环方法(RepeatForever／Repeat)的参数必须是Action类型，然而Rotate的create方法创建的对象是
-    是Rotate＊的(CaleTo，MoveTo等类的create方法创建的对象并不是action）
-  B.并行方法(Spawn)的参数除了与上一条一样必须是Action类型之外。
-    同为描绘的两个动作是无法同时进行的
-    ＝>提问：何为描绘的动作
-            为何下落和旋转无法同时进行(实际代码效果为只能下落)
-
-
-
-
-
-
-
-
+参考:
+http://www.cnblogs.com/ttss/p/4093687.html
 
 

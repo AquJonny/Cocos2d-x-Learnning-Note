@@ -1,0 +1,129 @@
+关于场景切换
+
+  与场景(切换/显示)相关的一些方法
+    getRunningScene      :  得到当前运行场景.导演一次只能运行一个场景.  
+
+    runWithScene         :  通过给定的场景进入导演的主循环. 只能在运行你的第一个场景调用它. 
+                            它如果已经有一个正在运行的场景不要调用它 
+
+    pushScene            :  暂停当前运行的场景,压入到暂停的场景栈中. 新场景将被执行. 
+                            尽量避免压入大场景,以减少内存分配. 只能在有运行场景时调用它. 
+
+    popScene             :  从堆栈中弹出了一个场景. 这一场景将会取代当前运行的场景. 
+                            运行场景将被删除.如果场景栈没有更多的场景的话执行将被终止. 只能在有运行场景时调用它. 
+
+    popToRootScene       :  从堆栈中弹出所有场景，到根场景. 这一场景将会取代当前运行的场景. 
+                            内部会调用“popToSceneStackLevel(1)”.  
+
+    popToSceneStackLevel :  从堆栈中弹出所有场景,直到到达第“level”个. 如果级别为0,它将结束导演的执行. 
+                            如果级别是1,那么它将弹出所有场景,直到到达根的场景. 如果级别小于等于比当前堆栈级别,它不会做任何事情. 
+
+    Director::pause      :  暂停正在运行的场景.运行场景将绘制，但所有scheduled timers将暂停 
+
+    Director::resume     :  恢复暂停场景. scheduled timers将再次被激活.“delta time”将会为0(就像是游戏没有暂停一样).  
+
+    Director::end        :  执行结束,释放运行场景. 同时退出应用.
+
+
+  切换场景的方式主要是以下三种：
+    A.replaceScene
+    B.pushScene
+    C.popScene
+  
+  使用时需要注意的一些内容:
+    1. 切换全屏场景的时候最好使用replaceScene而不是pushScene. 
+       因为pushScene并不会销毁前一个scene，仅仅是将后一个scene按照堆栈的方式加入到前一个scene的上面.
+       如果自身代码中内存管理写的不好的，利用pushScene很难发现该方面的问题，一旦崩溃定位都很难定位.
+       replaceScene可以及早的将隐含的问题给暴露出来.
+  
+    2. 尽量不要在onEnter里面初始化精灵Sprite
+       这个就和上一条有点关系了，如果使用了pushScene，那么再popScene的时候是不会调用前一个场景的init方法的，
+       所以有同学就喜欢把一些初始化放在onEnter里面，具体为什么不好，
+       我们来看一下不同切换场景的时候，每个Scene的生命周期就知道了.
+
+-----------------------------------PushScene&PopScene------------------------------------------------------
+       假设scene A是活动场景，现在我们用scene B来pushScene替换A，A和B的生命周期是这样的：
+         B ---- init();
+         A ---- onExit();
+         B ---- onEnter();
+         B ---- onEnterTransitionDidFinish();
+
+       此时popScene，弹出scene B，函数调用如下：
+         B ---- onExit();
+         B ---- 析构函数被调用
+         A ---- onEnter();
+-----------------------------------PushScene&PopScene------------------------------------------------------
+
+--------------------------------------replaceScene---------------------------------------------------------
+
+       假设scene A是活动场景，现在我们用scene B来replaceScene替换A，A和B的生命周期是这样的：
+         B ---- init();
+         A ---- onExit();
+         A ---- 析构函数被调用
+         B ---- onEnter();
+         B ---- onEnterTransitionDidFinish();
+
+       此时B replace A回来的调用跟上面一样，如下：
+         A ---- init();
+         B ---- onExit();
+         B ---- 析构函数调用
+         A ---- onEnter();
+         A ---- onEnterTransitionDidFinish();
+
+--------------------------------------replaceScene---------------------------------------------------------
+       从上面可以看出以下几点，
+         1. A的析构函数始终未被调用，因此A一直在内存中.
+         
+         2. 先执行B的init()函数，之后才调用A的onExit()方法，再之后才调用B的onEnter();
+            所以初始化最好应该放在init中来初始化.在上一个场景退出之前初始化好后一个场景需要的资源.
+
+参考:
+http://mythwind.blog.51cto.com/6506705/1570923
+
+
+  切换场景时,我们还可以加一些duang的特效
+  先看一下怎么去加:
+    普通切换:
+    Director::getInstance()->replaceScene(HelloWorld::createScene());  
+
+    文艺切换:
+    Director::getInstance()->replaceScene(TransitionSlideInT::create(0.3f, HelloWorld::createScene())); 
+
+  这里的TransitionSlideInT就是在切换时候加的特效了.0.3f是完成特效的时间.
+  
+  主要的切换特效有：
+    TransitionRotoZoom         : 旋转进入
+    TransitionJumpZoom         : 跳动进入
+    TransitionPageTurn         : 翻页效果进入
+    TransitionRadialCCW        : 钟摆效果
+    TransitionMoveInL          : 左侧进入
+      TransitionMoveInR        : 右侧进入
+      TransitionMoveInT        : 顶部进入
+      TransitionMoveInB        : 底部进入
+    TransitionSlideInL         : 分别从左侧滑入
+      TransitionSlideInR       : 分别从右侧滑入
+      TransitionSlideInT       : 分别从顶部滑入
+      TransitionSlideInB       : 分别从底部滑入
+    TransitionShrinkGrow       : 交替进入
+    TransitionFlipX            : x轴翻入（左右）
+      TransitionFlipY          : y轴翻入（上下）
+    TransitionFlipAngular      : 左上右下轴翻入
+    TransitionZoomFlipX        : x轴翻入放大缩小效果（左右）
+      TransitionZoomFlipY      : y轴翻入放大缩小效果（上下）
+    TransitionFadeTR           : 小方格右上角显示进入
+      TransitionFadeBL         : 小方格左下角显示进入
+      TransitionFadeUp         : 横条向上显示进入
+      TransitionFadeDown       : 横条向下显示进入
+    TransitionSplitCols        : 竖条切换进入
+      TransitionSplitRows      : 横条切换进入
+    TransitionZoomFlipAngular  : 左上右下轴翻入放大缩小效果
+    TransitionFade             : 渐隐进入
+    TransitionCrossFade        : 渐变进入
+    TransitionTurnOffTiles     : 小方格消失进入
+    TransitionRadialCCW        : 扇面展开
+      TransitionRadialCW       : 扇面收起
+
+  等等，更多效果可查看官方API.
+  PopScene时无法使用特效,修改or重写原本的方法的话，可以加入特效(高端技巧?!)
+
+

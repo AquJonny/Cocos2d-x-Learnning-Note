@@ -20,16 +20,8 @@
   但是子类无法直接去调用父类的虚函数，必须在当前类中去对父类声明的虚函数进行具体的实现。
   但是A类声明了虚函数，B类继承了A类并完善了虚函数的实现方法，此时C类继承B类的话，就可以调用
   A类声明的虚函数了，但是，实际调用的是在B类中已经完善了的虚函数。
-  
-4.关于精灵的动作
-  A.循环方法(RepeatForever／Repeat)的参数必须是Action类型，然而Rotate的create方法创建的对象是
-    是Rotate＊的(CaleTo，MoveTo等类的create方法创建的对象并不是action）
-  B.并行方法(Spawn)的参数除了与上一条一样必须是Action类型之外。
-    同为描绘的两个动作是无法同时进行的
-    ＝>提问：何为描绘的动作
-            为何下落和旋转无法同时进行(实际代码效果为只能下落)
             
-5.关于创建对象
+4.关于创建对象
   使用NEW活着CREATE创建的对象，由于是autorelease的对象的缘故。在主处理完成时会被自动释放。
   因此，在别的方法中想再次使用这个对象的话，有两种方法：
   A.在创建完成之后需要调用Retain()方法为其引用计数＋1
@@ -37,7 +29,7 @@
     这样在其他的方法中就可以通过访问全局变量，来利用创建的对象了
   以上两种方法创建的对象都需要在不再使用的时候使用CC_SAFE_RELEASE_NULL方法去释放掉
 
-6.创建事件监听Callback
+5.创建事件监听Callback
   事件监听一共分四类
   A.鼠标事件
   
@@ -58,7 +50,7 @@
     3.将事件监听器加入EventDirector监听队列
       this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(监听器，节点对象)
     
-7.常用的获取精灵信息的一些方法
+6.常用的获取精灵信息的一些方法
   A.获取／设定坐标点（X，Y）
     getPosition／setPosition
     
@@ -72,28 +64,6 @@
     getBoundingBox
     ＊判断一个点是否在精灵所在区域内
       BoundingBox.containsPoint(Point)
-  
-8.场景切换方式
-  分为三种方式：
-  A.repleceScene
-  B.pushScene
-  C.popScene
-  
-  相同点：
-    显示目标场景
-    
-  不同点：
-    repleceScene 
-      使用目标场景替换当前场景，当前场景会被完全释放（运行析构）函数
-    pushScene和popScene
-      都是对场景堆栈进行操作，
-      pushScene是将当前场景压入堆栈中暂存，不会运行析构函数，也不会释放资源
-      popScene是将目标场景丛堆栈中取出，同时，当前场景会被释放 *如果堆栈中没有Scene则无法使用
-      (需要实际运用去验证)
-    
-    补充：  
-      切换场景时，调用的一些方法的顺序
-      
   
 9.背景音乐和效果音
   使用CocosDenshion::SimpleAudioEngine类去实现，因为不属于Cocos2d的子类，需要添加头文件
@@ -139,76 +109,4 @@
    *调用时候需要将_1占位符代表的参数传递给函数
    *_1在写代码时候可以被省略
 
-12.随机数系统
-   C++(Ver.11)中,取随机数的方法:
-   1.传统的rand()方法.
-     只要调用这个方法就可以取得0~2147483647范围内的一个随机数.
-     而使用rand()%X方法的话,就可以取得0~X范围内的一个随机数(X为整数)
-     然而这个方法存在一个弊端.
-     那就是,通过这个方法获得的随机数的随机性很差,具体点说的话.每次执行，在第n次获得的随机数必然相同.
-     另说还有一个弊端是取得随机数的速度很慢...然而目前没有太大体会
-
-   2.C++11带来的新的非确定性随机数生成设备 std::random_devicestd::random_device
-     >std::random_device rd;
-     >rd();
-     通过这个方法就可以获得质量很好的随机数了
-
-   3.从2出发的更进一步的随机数,称为random number engine
-     标准把随机数抽象成随机数引擎和分布两部分.引擎用来产生随机数,分布产生特定分布的随机数(比如平均分布,正太分布等).
-　　 随机数引擎接受一个整形参数当作种子,不提供的话,会使用默认值. 推荐使用random_device来产生一个随机数当作种子
-
-     种子:
-       *如果不设定种子，那么产生的随机数序列每次都一样
-       常见种子:
-         std::random_device          标准库自带             可以生成质量很好的随机数
-         其他自定义的种子,例如Time等整形参数
-
-　　 标准提供三种常用的引擎(生成器):
-       linear_congruential_engine  线性同余算法           最常用的,而且速度也是非常快的
-       mersenne_twister_engine     梅森旋转算法           号称是最好的伪随机数生成器
-       subtract_with_carry_engine  带进位的线性同余算法   不明
-
-     分布器:
-       *如果只用generator配上seed只能产生离散的等可能分布，产生的数值在generator的min和max之间，
-        并且结果都是UIntType的值。无法很好的控制产生数值的分布区间和分布概率。如果要实现这种功能就要用到分布器。
-       常见分布器:
-         1.均匀分布：
-           uniform_int_distribution		整数均匀分布
-           uniform_real_distribution		浮点数均匀分布
-
-         2.伯努利类型分布：（仅有yes/no两种结果，概率一个p，一个1-p）
-           bernoulli_distribution		伯努利分布
-           binomial_distribution		二项分布
-           geometry_distribution		几何分布
-           negative_biomial_distribution	负二项分布
-
-         3.Rate-based distributions: 
-           poisson_distribution			泊松分布
-           exponential_distribution		指数分布
-           gamma_distribution			伽马分布
-           weibull_distribution			威布尔分布
-           extreme_value_distribution		极值分布
-
-         4.正态分布相关：
-           normal_distribution			正态分布
-           chi_squared_distribution		卡方分布
-           cauchy_distribution			柯西分布
-           fisher_f_distribution		费歇尔F分布
-           student_t_distribution		t分布
-
-         5.分段分布相关：
-           discrete_distribution		离散分布
-           piecewise_constant_distribution	分段常数分布
-           piecewise_linear_distribution	分段线性分布
-
-     >std::random_device rd;                                    //生成种子
-     >std::mt19937 mt.seed(rd());                               //使用梅森旋转算法的生成器
-     >std::uniform_real_distribution<float> dest(_min, _max);   //使用浮点数平均分布
-     >dest(mt);                                                 //获得_min到_max范围之间的浮点随机数
-
-参考:http://blog.csdn.net/akonlookie/article/details/8223525
-
-
-
-13.添加精灵动画的方法＊
   
