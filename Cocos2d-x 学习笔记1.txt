@@ -28,27 +28,6 @@
   B.利用CC_SYNTHESIZE_RETAIN方法创建全局性质的变量，NEW/CREATE之后获得的新对象，set到全局变量中
     这样在其他的方法中就可以通过访问全局变量，来利用创建的对象了
   以上两种方法创建的对象都需要在不再使用的时候使用CC_SAFE_RELEASE_NULL方法去释放掉
-
-5.创建事件监听Callback
-  事件监听一共分四类
-  A.鼠标事件
-  
-  B.按键事件
-  
-  C.触屏事件(单点触控和多点触控)
-    单点：
-       EventListenerTouchOneByOne::create()
-    多点：
-  
-  D.加速度传感器事件(陀螺仪)
-  
-  一般步骤：
-    1.创建事件监听器
-    2.定义事件响应方法（callback函数）
-    TouchEvent->onTouchBegan = callback函数内容
-    
-    3.将事件监听器加入EventDirector监听队列
-      this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(监听器，节点对象)
     
 6.常用的获取精灵信息的一些方法
   A.获取／设定坐标点（X，Y）

@@ -1,0 +1,173 @@
+创建事件监听
+
+  首先需要了解关于事件监听，的一些类的构成
+
+  
+  监听器:EventListener
+    事件监听器的基类。 如果你需要自定义有不同回调的监听器时,你需要继承这个类
+    |
+    |->EventListenerAcceleration    : 加速器事件监听器
+    |
+    |->EventListenerController      : 游戏手柄控制器事件监听器。
+    |
+    |->EventListenerCustom          : 自定义事件监听器。
+    |    |
+    |    |->EventListenerPhysicsContact   : 碰撞事件监听器，可以接收到所有碰撞事件。
+    |    |
+    |    |->EventListenerAssetsManagerEx  : 用于接收AssetsManagerEx更新过程中的事件的事件监听器。
+    |
+    |->EventListenerFocus           : 焦点事件监听器。(不明白)
+    |
+    |->EventListenerKeyboard        : 键盘事件监听器。
+    |
+    |->EventListenerMouse           : 鼠标事件监听器。
+    |
+    |->EventListenerTouchAllAtOnce  : 多点触摸事件监听器。
+    |
+    |->EventListenerTouchOneByOne   : 单点触摸事件监听器。
+
+    追加说明:
+      1.EventListenerController,加速计是设备的重力加速器(iOS设备的三向陀螺仪好像需要特殊的FW支持)
+        (好像没什么人用,相关说明资料(中文)也很少)
+       (Device::setAccelerometerEnabled(ture)//在使用此监听器前必须开启硬件的重力传感器??)
+参考:
+http://www.bkjia.com/Androidjc/852695.html
+
+      2.EventListenerCustom,可以用来制作自定义的监听事件
+
+      3.EventListenerPhysicsContact,物理引擎创造的物理世界中,碰撞的监听就靠它了
+
+      4.EventListenerAssetsManagerEx,看API说明,似乎是一个用于检查更新,进行更新的辅助监视工具
+        (制作拥有在线升级功能的软件时会有用?)
+
+      5.EventListenerTouchOneByOne,EventListenerTouchAllAtOnce,触屏监听就靠它了
+
+  事件分发器:EventDispatcher
+    这个类管理事件监听器的订阅和事件的分发
+    在创建事件监听器，并且设定好相关参数与回调函数之后,我们必须把监听器加入分发器的管理对象内
+    否则即便事件发生,也会因为没有需要被通知监听器而没有任何处理动作.
+  
+    添加监听器的方法:
+      1.addEventListenerWithSceneGraphPriority (EventListener *listener, Node *node)
+        将监听器listener加入对节点node的事件分发器中.优先级为"0"(优先级数字越小,越会被优先调用)
+        由于和节点node绑定,当节点node被释放时,listener也会自动被释放.
+
+      2.addEventListenerWithFixedPriority (EventListener *listener, int fixedPriority)
+        将监听器listener以优先级fixedPriority加入事件分发器(fixedPriority不可以设定为0),
+        由于没有和任何节点绑定,需要手动对这个listener进行释放.
+  
+      *对于复数个节点node,想要添加同样的监听器时,必须使用克隆方法,将监听器克隆.
+       因为一个监听器只能对应一个节点.
+       >_eventDispatcher->addEventListenerWithSceneGraphPriority(listener1, sprite1);
+       >_eventDispatcher->addEventListenerWithSceneGraphPriority(listener1->clone(), sprite2);
+       >_eventDispatcher->addEventListenerWithSceneGraphPriority(listener1->clone(), sprite3);
+   
+    删除监听器的方法:
+      1.removeEventListener (EventListener *listener)
+      删除指定的listener.
+  
+      2.removeCustomEventListeners (const std::string &customEventName)
+      根据自定义监听的名字,删除对应的listener,适用于自定义监听器
+  
+      3.removeAllEventListeners ()
+        删除所有的监听器,慎用!!使用后,连菜单按下也不会被响应(因为所有监听都删除了)
+
+  根据上面的说明,一般使用一个监听器分为以下几个步骤：
+    1.创建事件监听器
+      >auto listener1 = EventListenerTouchOneByOne::create(); 
+       //创建一个单点触摸事件监听器
+
+    2.定义事件响应方法（callback函数）&设置一些属性
+      >listener1->onTouchBegan = [](Touch* touch, Event* event){...return true/false;};
+       //定义回调函数,根据监听器不同,有不同的回调函数接口
+      >listener1->onTouchMoved = [](Touch* touch, Event* event){...};
+      >listener1->onTouchEnded = [=](Touch* touch, Event* event){...};
+
+      >listener1->setSwallowTouches(true);
+       //设置监听器属性(是否吞噬触摸事件)
+
+    3.将事件监听器加入EventDirector监听队列
+      >this->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener1，node);
+
+  追加说明:
+    1.多个监听器同时满足触发条件时候的响应顺序:
+      A.根据优先级,优先级数字越小的,会越先被响应
+
+      B.相同优先级的情况下,ZOrder越大的会越先被响应(被描绘在越上层...)
+
+      C.触屏事件中,setSwallowTouches为True时,如果上一层的回调函数返回值为True的话,
+        该事件就不会被下面的层接收到.详细:
+
+      ------------------------------详细--------------------------------------
+      假设Layer1的ZOrder大于Layer2的ZOder,(Layer1在Layer2上面)则 
+      Layer1和Layer2的触摸事件回调函数调用情况如下 
+      
+       Layer1 Swallow       :    false     false      true       true         //设定值
+       Layer1 touchBegan ret:    false     true       false      true         //返回值
+      =======================================================================
+       Layer1 touchMoved    :     no        yes        no         yes         //是否被调用
+       Layer2 touchBegan    :     yes       yes        yes        no          //是否被调用
+      
+      总结: 
+      1.只有Layer1的touchBegan返回true时,才会执行Layer1的touchMove事件.
+      2.只有当Layer1的swallow为true,并且Layer1的toucheBegan返回true时,
+        Layer2的touchBegan才不会执行.
+      ------------------------------详细--------------------------------------
+参考:
+http://blog.csdn.net/huang_hws/article/details/18554749
+
+    2.碰撞事件监听
+      除了设置监听器之外,还需要在物理世界中设定一些内容.
+      
+      其中,核心部分就是以下三个掩码的设置:
+        >Sprite1->getPhysicsBody()->setCategoryBitmask(掩码);    // 种类
+        >Sprite1->getPhysicsBody()->setCollisionBitmask(掩码);   // 碰撞 (不可穿透)
+        >Sprite1->getPhysicsBody()->setContactTestBitmask(掩码);  //接触 (触发检测函数);
+      
+        A.setCategoryBitmask
+          掩码是一个32位的int型整数
+          每一个场景中的物理刚体被会分配32个种类，每一个对应一个掩码值.
+          你可以自定义掩码值。与collisionBitMask和contactTestBitMask属性结合,你可以定义哪些物理刚体以及什么时候会互相影响.
+          默认值:0xFFFF  ->无分组
+
+        B.setCollisionBitmask
+          设置这个物理刚体的碰撞分组掩码，它决定有哪些物理刚体会与它产生碰撞.
+          当两个刚体在同一个空间中接触时，一个需要处理的碰撞就有可能产生，一个刚体的分组掩码会与另一个的分组掩码做逻辑与操作，
+          如果结果非0，那么刚体就会受碰撞所影响.刚体分别选择是否对碰撞做出响应并影响自己的运动.
+          打个比方，你可以避免碰撞计算所引起的对刚体速度的微小影响.
+          默认值:0xFFFF  ->任何刚体之间都会产生碰撞
+
+        C.setContactTestBitmask
+          设置这个物理刚体的接触分组掩码，它决定有哪些物理刚体与它产生接触的时候代理会响应.
+          当两个刚体在同一个空间中接触时，一个刚体的分组掩码会与另一个的分组掩码做逻辑与操作，
+          如果结果非0，一个PhysicsContact接触对象会被创建并传递給物理世界的代理。
+          为了优化性能，可以只为那些你需要处理接触的刚体之间设置不同的分组掩码。
+          默认值:0x0000  ->任何碰撞都不会产生回调事件
+
+          >body1->setCategoryBitmask(0x0001);       //body1的掩码是0x0001
+          >body1->setCollisionBitmask(0x0002);      //只可以与body2发生碰撞
+          >body1->setContactTestBitmask(0x0002);    //发生碰撞时,碰撞对象的掩码也为0x0002的话,产生回调事件
+   
+          >body2->setCategoryBitmask(0x0002);       //body2的掩码是0x0002
+          >body2->setCollisionBitmask(0x0001);      //只可以与body1发生碰撞(body1也可以和body2发生碰撞,两情相悦,GJ)
+          >body2->setContactTestBitmask(0x0002);    //和body1发生碰撞时,会产生回调事件
+    
+          >body3->setCategoryBitmask(0x0004);       //body3的掩码是0x0004
+          >body3->setCollisionBitmask(0x0002);      //只可以于body2发生碰撞,然而body2并不理你,碰撞不会发生
+          >body3->setContactTestBitmask(0x0002);    //如果和body1,body2发生碰撞,就会有回调事件
+                                                    //(但是由于碰撞掩码的缘故,并不会发生碰撞)
+   
+   
+          由此可见,想要有碰撞的回调事件发生的话,必须三个掩码都设定无误才行.
+
+      除了设置掩码之外,还有一个方法.
+        >Sprite2->getPhysicsBody()->setGroup(组号);
+
+       1.用body调用是设置这个body上所有的shape,shape上调用,是设置单个shape.
+
+       2.同组,总是相碰.不管后面的掩码怎么设置.
+
+       3.不同组,相不相碰要看掩码.优先级高于碰撞掩码.
+
+
+
